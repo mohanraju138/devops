@@ -46,7 +46,7 @@
             steps {
                 echo 'Deploy the App for k8s'
                 sh "sed -i 's/TAG/$BUILD_NUMBER/g' python-flask-app-deployment.yml"
-                sh "kubectl apply -f python-flask-deployment.yml --image=$registry:$BUILD_NUMBER"
+                sh "kubectl apply -f python-flask-app-deployment.yml"
             }
         }
     }        
