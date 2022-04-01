@@ -1,4 +1,4 @@
-pipeline { 
+    pipeline { 
     environment { 
         registry = "mohanraju138/python-flask-app-test" 
         registryCredential = 'dockerhub_id' 
@@ -10,7 +10,14 @@ pipeline {
             steps { 
                 git branch:'main', url: 'https://github.com/mohanraju138/devops.git' 
             }
+        }
+        
+        stage('bandit') { 
+            steps { 
+                sh 'docker run --user $(id -u):$(id -g) -v $(pwd):/src --rm secfigo/bandit bandit -r /src -f json -o /src/bandit-output-new.json | exit 0' 
+            }
         } 
+        
         stage('Building our image') { 
             steps { 
                 script { 
@@ -31,14 +38,23 @@ pipeline {
             steps { 
                 sh "docker rmi $registry:$BUILD_NUMBER" 
             }
-        }
+        } 
+        
+        
+    }
 
-        stage('Deploy to Kubernetes') {
+    stage('Deploy to Kubernetes') {
             steps {
                 echo 'Deploy the App for k8s'
                 sh "sed -i 's/TAG/$BUILD_NUMBER/g' python-flask-app-deployment.yml"
                 sh "kubectl apply -f python-flask-deployment.yml --image=$registry:$BUILD_NUMBER"
             }
-        } 
+        }    
+    
+    post {
+        always {
+            archiveArtifacts artifacts: 'bandit-output-new.json', onlyIfSuccessful: true
+        }
     }
+
 }
